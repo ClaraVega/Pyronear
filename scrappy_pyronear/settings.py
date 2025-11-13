@@ -12,6 +12,16 @@ BOT_NAME = "scrapping_pyronear"
 SPIDER_MODULES = ["scrappy_pyronear.spiders"]
 NEWSPIDER_MODULE = "scrappy_pyronear.spiders"
 
+# Définir les exports de données
+FEEDS = {
+    "alertwest.json": {
+        "format": "json",
+        "encoding": "utf8",
+        "store_empty": False,
+        "indent": 2,
+        "overwrite": True
+    }
+}
 
 # Crawl responsibly by identifying yourself (and your website) on the user-agent
 #USER_AGENT = "pyronear (+http://www.yourdomain.com)"
@@ -90,4 +100,4 @@ ROBOTSTXT_OBEY = True
 # Set settings whose default value is deprecated to a future-proof value
 REQUEST_FINGERPRINTER_IMPLEMENTATION = "2.7"
 TWISTED_REACTOR = "twisted.internet.asyncioreactor.AsyncioSelectorReactor"
-FEED_EXPORT_ENCODING = "utf-8"
+# FEED_EXPORT_ENCODING = "utf-8"
