@@ -3,11 +3,13 @@ import sys
 # Ensure project root is on sys.path so tests can import scrappy_pyronear
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 
+import shutil
 import json
 import requests
-from scrappy_pyronear.spiders.alertwest_spider import AlertwestSpider
+from scrappy_pyronear.spiders.alertwest_spider import ROOT_FOLDER_IMAGE, AlertwestSpider
+from scrapy.http import TextResponse
 
-# Execution line : pytest -v test_alertwest_spider.py
+# Execution line : pytest -v .\test\test_alertwest_spider.py
 
 API_URL = "https://api.cdn.prod.alertwest.com/api/getCameraDataByLoc"
 
@@ -26,8 +28,7 @@ def test_parse_creates_items(tmp_path):
     fake_json = {
     "data": {
         "cams": {
-            "key": [
-                {
+            "key": {
                     "ato": "camAutoTargetOverride",
                     "p": "camAzimuth",
                     "t": "camElevation",
@@ -59,6 +60,14 @@ def test_parse_creates_items(tmp_path):
                     "tb": "camTourable",
                     "trg": "camTouring",
                     "tr": "camTour"
+                },  
+            "data": [
+                {
+                    "p": "90",
+                    "lmt": "1763078579",
+                    "id": "123",
+                    "img": "test.jpg",
+                    "cn": "TestCam2"
                 }
             ]
         }
@@ -66,19 +75,62 @@ def test_parse_creates_items(tmp_path):
 }
 
     body = json.dumps(fake_json)
-    response = requests.get(url=API_URL, body=body, encoding="utf-8")
+    response = TextResponse(url=API_URL, body=body.encode("utf-8"), encoding="utf-8")
 
     results = list(spider.parse(response))
     dict_items = [r for r in results if isinstance(r, dict)]
 
-    assert len(dict_items) == 1
+    assert len(dict_items) >= 1
     item = dict_items[0]
 
-    assert ["Azimuth","Id","Screenshot","Offline"] in item
+    assert item["id"] == "123"
+    assert item["name"] == "TestCam2"
+    assert item["azimuth"] == "90"
+    assert isinstance(item["last_moved"], int)
+    assert item["last_moved"] == int("1763078579")
+    assert "image_url" in item and item["image_url"].startswith(f"https://img.cdn.prod.alertwest.com/data/thumb/{item['id']}/")
+    assert item["image_url"].endswith("test.jpg")
+
+    # s'assurer qu'une requête d'image a bien été générée avec le bon meta
+    assert any(getattr(r, "meta", {}).get("id") == "123" for r in results)
 
 
-def test_save_image(tmp_path):
-    """Test that save_image writes a file."""
+def test_parse_handles_missing_properties():
+    """When some short keys are missing, parser should still yield entries with None/defaults."""
+    spider = AlertwestSpider()
+    fake_json = {
+        "data": {"cams": {"key": {"id": "camId", "lmt": "camLastMoved"}, "data": [{"id": "999"}]}}
+    }
+    body = json.dumps(fake_json)
+    response = TextResponse(url=API_URL, body=body.encode("utf-8"), encoding="utf-8")
+
+    results = list(spider.parse(response))
+    dict_items = [r for r in results if isinstance(r, dict)]
+    assert len(dict_items) == 1
+    item = dict_items[0]
+    assert item["id"] == "999"
+    # last_moved should be parsed (missing => default '0' -> int 0)
+    assert item["last_moved"] == 0
+    # missing name/azimuth/image_url -> values may be None or constructed; ensure keys exist
+    assert "name" in item and "azimuth" in item and "image_url" in item
+
+
+def test_parse_no_data_returns_nothing():
+    spider = AlertwestSpider()
+    fake_json = {"data": {"cams": {"key": {}, "data": []}}}
+    body = json.dumps(fake_json)
+    response = TextResponse(url=API_URL, body=body.encode("utf-8"), encoding="utf-8")
+    results = list(spider.parse(response))
+    # No dict items and no requests expected
+    assert results == [] or all(isinstance(r, dict) and r.get("id") is None for r in results) or len(results) == 0
+
+
+def test_save_image_writes_file_and_content(tmp_path):
+    """Test that save_image writes a file with the exact content."""
+    # ensure clean state
+    if ROOT_FOLDER_IMAGE.exists():
+        shutil.rmtree(ROOT_FOLDER_IMAGE)
+
     spider = AlertwestSpider()
     img_bytes = b"fakeimagecontent"
 
@@ -86,10 +138,35 @@ def test_save_image(tmp_path):
         status = 200
         url = "https://example.com/img.jpg"
         body = img_bytes
-        meta = {"id": "123", "lmt": 456}
+        meta = {"id": "123", "last_moved": 456, "azimuth": "90"}
 
     spider.save_image(DummyResponse())
 
-    path = os.path.join("images", "123_456.jpg")
-    assert os.path.exists(path)
-    os.remove(path)
+    expected_path = ROOT_FOLDER_IMAGE / "123" / str(DummyResponse.meta["azimuth"]) / f"123_456.jpg"
+    assert expected_path.exists(), f"Expected image file at {expected_path} but it does not exist"
+
+    # verify content
+    with expected_path.open("rb") as f:
+        content = f.read()
+    assert content == img_bytes
+
+    # cleanup
+    shutil.rmtree(ROOT_FOLDER_IMAGE)
+
+
+def test_save_image_ignores_404(tmp_path):
+    # ensure clean state
+    if ROOT_FOLDER_IMAGE.exists():
+        shutil.rmtree(ROOT_FOLDER_IMAGE)
+
+    spider = AlertwestSpider()
+    class Dummy404:
+        status = 404
+        url = "https://example.com/no.jpg"
+        body = b""
+        meta = {"id": "404", "last_moved": 0, "azimuth": "0"}
+
+    spider.save_image(Dummy404())
+
+    # no files or directories should be created
+    assert not ROOT_FOLDER_IMAGE.exists()
