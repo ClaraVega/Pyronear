@@ -24,7 +24,7 @@ class AlertwestSpider(scrapy.Spider):
         data = json.loads(response.text)
 
         # Récupérer la table des clés courtes -> noms complets (ex: "p": "camAzimuth")
-        key_list = data.get("data", {}).get("cams", {}).get("key", [])
+        key_list = data.get("data", {}).get("cams", {}).get("key", {})
             
         # Construire un dictionnaire mapping propriété -> clé courte (ex: "Azimuth" -> "p")
         short_key = {}
