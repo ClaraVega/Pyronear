@@ -122,7 +122,7 @@ def test_parse_no_data_returns_nothing():
     response = TextResponse(url=API_URL, body=body.encode("utf-8"), encoding="utf-8")
     results = list(spider.parse(response))
     # No dict items and no requests expected
-    assert results == [] or all(isinstance(r, dict) and r.get("id") is None for r in results) or len(results) == 0
+    assert results == []
 
 
 def test_save_image_writes_file_and_content():
