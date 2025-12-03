@@ -125,7 +125,7 @@ def test_parse_no_data_returns_nothing():
     assert results == [] or all(isinstance(r, dict) and r.get("id") is None for r in results) or len(results) == 0
 
 
-def test_save_image_writes_file_and_content(tmp_path):
+def test_save_image_writes_file_and_content():
     """Test that save_image writes a file with the exact content."""
     # ensure clean state
     if ROOT_FOLDER_IMAGE.exists():
