@@ -114,6 +114,31 @@ def test_parse_handles_missing_properties():
     # missing name/azimuth/image_url -> values may be None or constructed; ensure keys exist
     assert "name" in item and "azimuth" in item and "image_url" in item
 
+    # When cam_id is present but azimuth is None, no scrapy.Request should be yielded
+    # to avoid directory paths containing the string "None"
+    request_items = [r for r in results if hasattr(r, "meta")]
+    assert len(request_items) == 0, "No Request should be yielded when azimuth is None"
+
+
+def test_parse_skips_request_when_cam_id_is_none():
+    """When cam_id is None, no scrapy.Request should be yielded."""
+    spider = AlertwestSpider()
+    # Missing camId in keys, so cam_id will be None
+    fake_json = {
+        "data": {"cams": {"key": {"p": "camAzimuth", "lmt": "camLastMoved"}, "data": [{"p": "90", "lmt": "1763078579"}]}}
+    }
+    body = json.dumps(fake_json)
+    response = TextResponse(url=API_URL, body=body.encode("utf-8"), encoding="utf-8")
+
+    results = list(spider.parse(response))
+    # dict items should still be yielded
+    dict_items = [r for r in results if isinstance(r, dict)]
+    assert len(dict_items) == 1
+
+    # No scrapy.Request should be yielded when cam_id is None
+    request_items = [r for r in results if hasattr(r, "meta")]
+    assert len(request_items) == 0, "No Request should be yielded when cam_id is None"
+
 
 def test_parse_no_data_returns_nothing():
     spider = AlertwestSpider()

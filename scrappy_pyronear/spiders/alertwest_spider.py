@@ -64,11 +64,13 @@ class AlertwestSpider(scrapy.Spider):
             }
 
             # Et on peut aussi télécharger l'image (en créant une requête secondaire)
-            yield scrapy.Request(
-                img_url,
-                callback=self.save_image,
-                meta={"id": cam_id, "last_moved": timestamp, "azimuth": azimuth}
-            )
+            # Skip request creation if required fields are None to avoid directory paths with "None"
+            if cam_id is not None and azimuth is not None:
+                yield scrapy.Request(
+                    img_url,
+                    callback=self.save_image,
+                    meta={"id": cam_id, "last_moved": timestamp, "azimuth": azimuth}
+                )
 
     def save_image(self, response):
         # If image not found, don't create any folders/files
