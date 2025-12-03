@@ -7,6 +7,9 @@ import scrapy
 
 
 class PyronearItem(scrapy.Item):
-    # define the fields for your item here like:
-    # name = scrapy.Field()
-    pass
+    id = scrapy.Field()
+    name = scrapy.Field()
+    azimuth = scrapy.Field()
+    last_moved = scrapy.Field()
+    image_url = scrapy.Field()
+    valid_url = scrapy.Field()
