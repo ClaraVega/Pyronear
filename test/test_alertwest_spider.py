@@ -154,7 +154,7 @@ def test_save_image_writes_file_and_content(tmp_path):
     shutil.rmtree(ROOT_FOLDER_IMAGE)
 
 
-def test_save_image_ignores_404(tmp_path):
+def test_save_image_ignores_404():
     # ensure clean state
     if ROOT_FOLDER_IMAGE.exists():
         shutil.rmtree(ROOT_FOLDER_IMAGE)
