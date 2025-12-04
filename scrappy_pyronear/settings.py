@@ -30,15 +30,39 @@ FEEDS = {
 ROBOTSTXT_OBEY = True
 
 # Configure maximum concurrent requests performed by Scrapy (default: 16)
-#CONCURRENT_REQUESTS = 32
+# Increase these values to parallelize downloads. Tune according to your
+# network bandwidth and target server politeness (and robots.txt).
+CONCURRENT_REQUESTS = 64
+
+# The maximum number of concurrent requests that will be performed to any
+# single domain. Keep this lower than CONCURRENT_REQUESTS to avoid overloading
+# the remote host.
+CONCURRENT_REQUESTS_PER_DOMAIN = 32
+
+# If you prefer limiting by IP instead of domain, set CONCURRENT_REQUESTS_PER_IP.
+# Leave as 0 to disable IP-based limits.
+CONCURRENT_REQUESTS_PER_IP = 0
 
 # Configure a delay for requests for the same website (default: 0)
 # See https://docs.scrapy.org/en/latest/topics/settings.html#download-delay
 # See also autothrottle settings and docs
-#DOWNLOAD_DELAY = 3
+DOWNLOAD_DELAY = 0
 # The download delay setting will honor only one of:
-#CONCURRENT_REQUESTS_PER_DOMAIN = 16
-#CONCURRENT_REQUESTS_PER_IP = 16
+# Increase the number of pipeline items processed in parallel
+CONCURRENT_ITEMS = 200
+
+# Increase Twisted threadpool size for blocking calls (DNS resolution, etc.)
+REACTOR_THREADPOOL_MAXSIZE = 20
+
+# Enable DNS cache to reduce DNS lookups
+DNSCACHE_ENABLED = True
+
+# Disable AutoThrottle when you want maximum throughput. If you need to be
+# polite to the remote host, consider enabling AutoThrottle instead.
+AUTOTHROTTLE_ENABLED = False
+
+# Download timeout (seconds)
+DOWNLOAD_TIMEOUT = 60
 
 # Disable cookies (enabled by default)
 #COOKIES_ENABLED = False
@@ -107,4 +131,5 @@ ITEM_PIPELINES = {
 }
 
 IMAGES_STORE = 'images'
-LOG_LEVEL = "INFO"
+LOG_ENABLED = True
+LOG_LEVEL = "ERROR"

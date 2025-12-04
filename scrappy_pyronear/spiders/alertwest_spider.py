@@ -24,6 +24,7 @@ class AlertwestSpider(scrapy.Spider):
         data_cams = data.get("data", {}).get("cams", {}).get("data", [])
 
         self.total_cams = len(data_cams)
+        print(len(data_cams))
 
         # Construct a mapping from property to short key ( ex: "Azimuth" -> "p" )
         short_key = {}
@@ -36,10 +37,10 @@ class AlertwestSpider(scrapy.Spider):
         # Iterate over cameras and yield items
         for cam in data_cams:
             timestamp = int(cam.get(short_key["camLastMoved"], '0'))
-            cam_id = cam.get(short_key["camId"])
-            img_name = cam.get(short_key["camScreenshot"])
-            azimuth = cam.get(short_key["camAzimuth"])
-            cam_name = cam.get(short_key["camName"])
+            cam_id = cam.get(short_key["camId"], None)
+            img_name = cam.get(short_key["camScreenshot"], None)
+            azimuth = cam.get(short_key["camAzimuth"], None)
+            cam_name = cam.get(short_key["camName"], None)
 
             # Construct image URL
             date_path = datetime.now().strftime("%Y/%m/%d")

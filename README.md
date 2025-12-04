@@ -18,4 +18,8 @@ scrapy crawl alertwest
 ```
 scrapy crawl alertwest -o alertwest.json
 ```
+## Lancer les tests 
 
+```
+pytest -v .\test\test_alertwest_spider.py
+```
