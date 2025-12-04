@@ -6,12 +6,9 @@
 
 # useful for handling different item types with a single interface
 
-from twisted.python.failure import Failure
-import logging
 import scrapy
 from scrapy.pipelines.images import ImagesPipeline
 from tqdm import tqdm
-import time
 import os
 
 class AlertwestImagePipeline(ImagesPipeline):
@@ -26,8 +23,19 @@ class AlertwestImagePipeline(ImagesPipeline):
 
     def get_media_requests(self, item, info):
         """Send a request to download the image with metadata"""
+
+        if self.progress_bar is None:
+            total = info.spider.total_cams or 0
+            self.progress_bar = tqdm(
+                total=total,
+                desc="Downloading images 🚀 ",
+                bar_format="{l_bar}\033[92m{bar}\033[0m| {n_fmt}/{total_fmt} images",
+                unit="image"
+            )
+
         url = item["image_url"]
         if url :
+            self.progress_bar.update(1)
             yield scrapy.Request(
                 url,
                 meta={
@@ -42,7 +50,6 @@ class AlertwestImagePipeline(ImagesPipeline):
 
     def media_failed(self, failure, request, info):
         cam_id = request.meta.get("id")
-        self.progress_bar.update(1)
         print(f"Failed to download image for camera ID {cam_id} because the camera is unavaiblable")
         return None
 
@@ -55,19 +62,3 @@ class AlertwestImagePipeline(ImagesPipeline):
         filename = f"{cam_id}.jpg"
 
         return os.path.join(cam_id, azimuth, filename)
-
-    def item_completed(self, results, item, info):
-        if self.progress_bar is None:
-            total = info.spider.total_cams or 0
-            self.progress_bar = tqdm(
-                total=total,
-                desc="Downloading images 🕷️",
-                bar_format="{l_bar}\033[92m{bar}\033[0m| {n_fmt}/{total_fmt} images",
-                unit="image"
-            )
-
-        # Only increment if the image was downloaded successfully
-        if any(r[0] for r in results):
-            self.progress_bar.update(1)
-
-        return item

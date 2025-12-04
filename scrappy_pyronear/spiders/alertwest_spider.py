@@ -7,7 +7,7 @@ from scrappy_pyronear.items import PyronearItem   # <<< import item propre
 # NORMAL : scrapy crawl alertwest
 # WITH DEBUG : scrapy crawl alertwest -s LOG_LEVEL=DEBUG
 
-# Propriétés utiles des caméras
+# INDIVIDUAL PROPERTIES TO EXTRACT FROM THE API RESPONSE
 INTERESTING_PROPERTIES = ["Azimuth", "camLastMoved", "camId", "Screenshot", "camOffline","camName"]
 API_URL = "https://api.cdn.prod.alertwest.com/api/getCameraDataByLoc"
 CAM_URL_TEMPLATE = "https://api.cdn.prod.alertwest.com/api/panorama/list/byCamId?camId={cam_id}&timestamp="
@@ -50,7 +50,7 @@ class AlertwestSpider(scrapy.Spider):
             else :
                 img_url = None
 
-            # Création de l’item propre
+            # Create and yield the item
             item = PyronearItem(
                 id=cam_id,
                 name=cam_name,
