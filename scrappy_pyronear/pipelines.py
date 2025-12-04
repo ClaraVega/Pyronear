@@ -61,7 +61,7 @@ class AlertwestImagePipeline(ImagesPipeline):
             total = info.spider.total_cams or 0
             self.progress_bar = tqdm(
                 total=total,
-                desc="Downloading images 🔥",
+                desc="Downloading images 🕷️",
                 bar_format="{l_bar}\033[92m{bar}\033[0m| {n_fmt}/{total_fmt} images",
                 unit="image"
             )
