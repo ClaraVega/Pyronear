@@ -8,7 +8,7 @@ from scrappy_pyronear.items import PyronearItem   # <<< import item propre
 # WITH DEBUG : scrapy crawl alertwest -s LOG_LEVEL=DEBUG
 
 # Propriétés utiles des caméras
-INTERESTING_PROPERTIES = ["camAzimuth", "camLastMoved", "camId", "camScreenshot", "camOffline","camName"]
+INTERESTING_PROPERTIES = ["Azimuth", "camLastMoved", "camId", "Screenshot", "camOffline","camName"]
 API_URL = "https://api.cdn.prod.alertwest.com/api/getCameraDataByLoc"
 CAM_URL_TEMPLATE = "https://api.cdn.prod.alertwest.com/api/panorama/list/byCamId?camId={cam_id}&timestamp="
 
@@ -38,14 +38,13 @@ class AlertwestSpider(scrapy.Spider):
         for cam in data_cams:
             timestamp = int(cam.get(short_key["camLastMoved"], '0'))
             cam_id = cam.get(short_key["camId"], None)
-            img_name = cam.get(short_key["camScreenshot"], None)
-            azimuth = cam.get(short_key["camAzimuth"], None)
+            img_name = cam.get(short_key["Screenshot"], None)
+            azimuth = cam.get(short_key["Azimuth"], None)
             cam_name = cam.get(short_key["camName"], None)
 
             # Construct image URL
-            date_path = datetime.now().strftime("%Y/%m/%d")
-
-            if cam_id and date_path and img_name :
+            if cam_id and img_name :
+                date_path = datetime.now().strftime("%Y/%m/%d")
                 img_url = f"https://img.cdn.prod.alertwest.com/data/thumb/{cam_id}/{date_path}/{img_name}"
 
             else :
