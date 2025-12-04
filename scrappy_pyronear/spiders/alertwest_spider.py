@@ -7,8 +7,8 @@ from scrappy_pyronear.items import PyronearItem   # <<< import item propre
 # NORMAL : scrapy crawl alertwest
 # WITH DEBUG : scrapy crawl alertwest -s LOG_LEVEL=DEBUG
 
-# Propriétés utiles des caméras
-INTERESTING_PROPERTIES = ["camAzimuth", "camLastMoved", "camId", "camScreenshot", "camOffline","camName"]
+# INDIVIDUAL PROPERTIES TO EXTRACT FROM THE API RESPONSE
+INTERESTING_PROPERTIES = ["Azimuth", "camLastMoved", "camId", "Screenshot", "camOffline","camName"]
 API_URL = "https://api.cdn.prod.alertwest.com/api/getCameraDataByLoc"
 CAM_URL_TEMPLATE = "https://api.cdn.prod.alertwest.com/api/panorama/list/byCamId?camId={cam_id}&timestamp="
 
@@ -24,6 +24,7 @@ class AlertwestSpider(scrapy.Spider):
         data_cams = data.get("data", {}).get("cams", {}).get("data", [])
 
         self.total_cams = len(data_cams)
+        print(len(data_cams))
 
         # Construct a mapping from property to short key ( ex: "Azimuth" -> "p" )
         short_key = {}
@@ -36,21 +37,20 @@ class AlertwestSpider(scrapy.Spider):
         # Iterate over cameras and yield items
         for cam in data_cams:
             timestamp = int(cam.get(short_key["camLastMoved"], '0'))
-            cam_id = cam.get(short_key["camId"])
-            img_name = cam.get(short_key["camScreenshot"])
-            azimuth = cam.get(short_key["camAzimuth"])
-            cam_name = cam.get(short_key["camName"])
+            cam_id = cam.get(short_key["camId"], None)
+            img_name = cam.get(short_key["Screenshot"], None)
+            azimuth = cam.get(short_key["Azimuth"], None)
+            cam_name = cam.get(short_key["camName"], None)
 
             # Construct image URL
-            date_path = datetime.now().strftime("%Y/%m/%d")
-
-            if cam_id and date_path and img_name :
+            if cam_id and img_name :
+                date_path = datetime.now().strftime("%Y/%m/%d")
                 img_url = f"https://img.cdn.prod.alertwest.com/data/thumb/{cam_id}/{date_path}/{img_name}"
 
             else :
                 img_url = None
 
-            # Création de l’item propre
+            # Create and yield the item
             item = PyronearItem(
                 id=cam_id,
                 name=cam_name,

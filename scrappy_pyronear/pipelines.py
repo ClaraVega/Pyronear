@@ -5,11 +5,11 @@
 
 
 # useful for handling different item types with a single interface
-import logging
-from itemadapter import ItemAdapter
+
 import scrapy
 from scrapy.pipelines.images import ImagesPipeline
 from tqdm import tqdm
+import os
 
 class AlertwestImagePipeline(ImagesPipeline):
 
@@ -23,8 +23,19 @@ class AlertwestImagePipeline(ImagesPipeline):
 
     def get_media_requests(self, item, info):
         """Send a request to download the image with metadata"""
+
+        if self.progress_bar is None:
+            total = info.spider.total_cams or 0
+            self.progress_bar = tqdm(
+                total=total,
+                desc="Downloading images 🚀 ",
+                bar_format="{l_bar}\033[92m{bar}\033[0m| {n_fmt}/{total_fmt} images",
+                unit="image"
+            )
+
         url = item["image_url"]
         if url :
+            self.progress_bar.update(1)
             yield scrapy.Request(
                 url,
                 meta={
@@ -37,27 +48,17 @@ class AlertwestImagePipeline(ImagesPipeline):
             self.progress_bar.update(1)
             print(f"Image URL is None for camera ID {item['id']}")
 
-    def file_path(self, request, response=None, info=None):
-        """Define the file path for the downloaded image"""
-        cam_id = str(request.meta["id"])
-        azimuth = str(request.meta["azimuth"])
-        timestamp = request.meta["last_moved"]
+    def media_failed(self, failure, request, info):
+        cam_id = request.meta.get("id")
+        print(f"Failed to download image for camera ID {cam_id} because the camera is unavaiblable")
+        return None
 
-        filename = f"{cam_id}_{timestamp}.jpg"
+    def file_path(self, request, response=None, info=None, item=None):
 
-        return f"{cam_id}/{azimuth}/{filename}"
+        cam_id = str(item.get("id"))
 
-    def item_completed(self, results, item, info):
-        if self.progress_bar is None:
-            total = getattr(info.spider, "total_cams", 0)  # récupère total_cams maintenant que le parse a tourné
-            self.progress_bar = tqdm(
-                total=total,
-                desc="Downloading images 🔥",
-                bar_format="{l_bar}\033[92m{bar}\033[0m| {n_fmt}/{total_fmt} images",
-                unit="image"
-            )
-        self.progress_bar.update(1)
-        success = any(x[0] for x in results)
-        if not success and item.get("image_url"):
-            logging.warning(f"Image download failed for camera ID {item['id']}")
-        return item
+        # If there is no azimuth, it is replaced by unknown
+        azimuth = str(item.get("azimuth") or "unknown")
+        filename = f"{cam_id}.jpg"
+
+        return os.path.join(cam_id, azimuth, filename)
