@@ -16,7 +16,15 @@ from twisted.internet.defer import TimeoutError as DeferTimeoutError
 from twisted.web.client import ResponseNeverReceived
 
 class AlertwestImagePipeline(ImagesPipeline):
-     
+    """
+    Scrapy pipeline for downloading camera images.
+
+    This pipeline:
+    - Downloads images from camera URLs provided in items.
+    - Tracks download progress using a tqdm progress bar.
+    - Handles various failure cases, including timeouts, missing URLs, and cameras that are down.
+    - Maintains counters for failed downloads, missing URLs, and timeouts, and reports them when the spider closes.
+    """
     def open_spider(self, spider):
         self.time = time.time()
         self.spiderinfo = self.SpiderInfo(spider)
