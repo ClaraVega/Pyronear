@@ -15,7 +15,7 @@ class AlertwestSpider(scrapy.Spider):
     name = "alertwest"
     start_urls = [API_URL]
 
-    # Exécution automatique de parse quand la spider est ouverte
+    # automatically called when the spider is opened
     def parse(self, response):
         # Fetch the JSON data
         data = json.loads(response.text)
