@@ -10,24 +10,37 @@ import scrapy
 from scrapy.pipelines.images import ImagesPipeline
 from tqdm import tqdm
 import os
+import time
+from twisted.internet.error import TimeoutError, TCPTimedOutError
+from twisted.internet.defer import TimeoutError as DeferTimeoutError
+from twisted.web.client import ResponseNeverReceived
 
 class AlertwestImagePipeline(ImagesPipeline):
-
+     
     def open_spider(self, spider):
+        self.time = time.time()
         self.spiderinfo = self.SpiderInfo(spider)
         self.total = getattr(spider, "total_cams", 0)
+        self.failed_cam = 0 # counter for failed downloads
+        self.no_url = 0 # counter for missing urls
+        self.timeout_cam = 0  # compteur des timeouts
         self.progress_bar = None
 
     def close_spider(self, spider):
-        self.progress_bar.close()
+        print(f"\nURL retrieved but camera is down for {self.failed_cam} cameras among {self.total} total cameras.")
+        print(f"Miss a parameter in the json to construct URL for {self.no_url} cameras among {self.total} total cameras.")
+        print(f"Timed out for {self.timeout_cam} cameras among {self.total} total cameras.")
+        print(f"Time taken: {(time.time() - self.time)/60:.2f} minutes")
+        if self.progress_bar:
+            self.progress_bar.close()
 
     def get_media_requests(self, item, info):
         """Send a request to download the image with metadata"""
 
         if self.progress_bar is None:
-            total = info.spider.total_cams or 0
+            self.total = info.spider.total_cams
             self.progress_bar = tqdm(
-                total=total,
+                total=self.total,
                 desc="Downloading images 🚀 ",
                 bar_format="{l_bar}\033[92m{bar}\033[0m| {n_fmt}/{total_fmt} images",
                 unit="image"
@@ -46,11 +59,14 @@ class AlertwestImagePipeline(ImagesPipeline):
             )
         else :
             self.progress_bar.update(1)
-            print(f"Image URL is None for camera ID {item['id']}")
+            self.no_url += 1
 
     def media_failed(self, failure, request, info):
-        cam_id = request.meta.get("id")
-        print(f"Failed to download image for camera ID {cam_id} because the camera is unavaiblable")
+        # Count timeouts separately, silence their log via custom LogFormatter
+        if failure.check(TimeoutError, TCPTimedOutError, ResponseNeverReceived, DeferTimeoutError):
+            self.timeout_cam += 1
+            return None
+        self.failed_cam += 1
         return None
 
     def file_path(self, request, response=None, info=None, item=None):

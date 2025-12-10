@@ -49,7 +49,7 @@ CONCURRENT_REQUESTS_PER_IP = 0
 DOWNLOAD_DELAY = 0
 # The download delay setting will honor only one of:
 # Increase the number of pipeline items processed in parallel
-CONCURRENT_ITEMS = 200
+CONCURRENT_ITEMS = 400
 
 # Increase Twisted threadpool size for blocking calls (DNS resolution, etc.)
 REACTOR_THREADPOOL_MAXSIZE = 20
@@ -62,7 +62,12 @@ DNSCACHE_ENABLED = True
 AUTOTHROTTLE_ENABLED = False
 
 # Download timeout (seconds)
-DOWNLOAD_TIMEOUT = 60
+DOWNLOAD_TIMEOUT = 2
+LOG_FORMATTER = "scrappy_pyronear.logformatter.SilentTimeoutLogFormatter" # Custom log formatter to silence timeout errors
+
+# Disable retries to avoid waiting time on servers that don't respond
+RETRY_ENABLED = False
+
 
 # Disable cookies (enabled by default)
 #COOKIES_ENABLED = False
@@ -126,6 +131,7 @@ REQUEST_FINGERPRINTER_IMPLEMENTATION = "2.7"
 TWISTED_REACTOR = "twisted.internet.asyncioreactor.AsyncioSelectorReactor"
 # FEED_EXPORT_ENCODING = "utf-8"
 
+# Article pipeline order and priority. 0 means high priority, 1000 means low priority.
 ITEM_PIPELINES = {
     'scrappy_pyronear.pipelines.AlertwestImagePipeline': 300,
 }
