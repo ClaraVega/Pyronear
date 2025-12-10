@@ -35,8 +35,26 @@ class AlertwestImagePipeline(ImagesPipeline):
             self.progress_bar.close()
 
     def get_media_requests(self, item, info):
-        """Send a request to download the image with metadata"""
+        """
+        Generates Scrapy requests to download images, passing camera metadata.
 
+        Args:
+            item (dict): Dictionary containing image and camera metadata. Expected keys:
+                - image_url (str): URL of the image to download.
+                - id (str/int): Unique identifier for the camera.
+                - azimuth (str/int): Azimuth value of the camera.
+                - last_moved (str): Timestamp of the last movement.
+            info: Scrapy pipeline info object.
+
+        Yields:
+            scrapy.Request: For each valid image URL, yields a request with metadata in the `meta` dict:
+                - id
+                - azimuth
+                - last_moved
+
+        Side effects:
+            Updates progress bar and counters for missing URLs.
+        """
         if self.progress_bar is None:
             self.total = info.spider.total_cams
             self.progress_bar = tqdm(
