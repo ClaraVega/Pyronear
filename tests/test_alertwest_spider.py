@@ -9,6 +9,9 @@ from scrappy_pyronear.spiders.alertwest_spider import AlertwestSpider
 from scrappy_pyronear.items import PyronearItem
 
 def fake_response(json_data):
+    '''
+    Creates a fake Scrappy response containing json data.
+    '''
     body = json.dumps(json_data)
     return TextResponse(
         url="https://api.test/alertwest",
@@ -17,6 +20,9 @@ def fake_response(json_data):
     )
 
 def test_alertwest_spider_parse():
+    '''
+    Checks that the AlertwestSpider correctly parses a sample JSON response and creates a valid PyronearItem and a valid image url.
+    '''
     spider = AlertwestSpider()
 
     sample_json = {

@@ -9,6 +9,9 @@ from scrappy_pyronear.pipelines import AlertwestImagePipeline
 from scrappy_pyronear.items import PyronearItem
 
 def test_get_media_requests_with_url(monkeypatch):
+    '''
+    Given a clean PyronearItem, checks that the pipeline detects image URLs and creates requests with correct meta information.
+    '''
     with tempfile.TemporaryDirectory() as tmpdir:
         pipeline = AlertwestImagePipeline(store_uri=f"file://{tmpdir}")
     spider = type("obj", (object,), {"total_cams": 1})
@@ -33,6 +36,9 @@ def test_get_media_requests_with_url(monkeypatch):
     assert req.meta["last_moved"] == 160000
 
 def test_file_path():
+    '''
+    Checks that the pipeline generates the correct file path for storing images.
+    '''
     with tempfile.TemporaryDirectory() as tmpdir:
         pipeline = AlertwestImagePipeline(store_uri=f"file://{tmpdir}")
 
