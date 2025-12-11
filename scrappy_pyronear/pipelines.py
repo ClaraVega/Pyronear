@@ -11,6 +11,7 @@ from scrapy.pipelines.images import ImagesPipeline
 from tqdm import tqdm
 import os
 import time
+from datetime import datetime
 from twisted.internet.error import TimeoutError, TCPTimedOutError
 from twisted.internet.defer import TimeoutError as DeferTimeoutError
 from twisted.web.client import ResponseNeverReceived
@@ -73,14 +74,22 @@ class AlertwestImagePipeline(ImagesPipeline):
             )
 
         url = item["image_url"]
+
+        # Skip thermal cameras
+        if "thermal" in item['name'].lower():
+            self.progress_bar.update(1)
+            return
+
         if url :
             self.progress_bar.update(1)
+            scraped_at = datetime.now().strftime("%Y%m%d_%H%M%S_%f")
             yield scrapy.Request(
                 url,
                 meta={
                     "id": item["id"],
                     "azimuth": item["azimuth"],
                     "last_moved": item["last_moved"],
+                    "scraped_at": item.get("scraped_at", scraped_at)
                 }
             )
         else :
@@ -97,10 +106,12 @@ class AlertwestImagePipeline(ImagesPipeline):
 
     def file_path(self, request, response=None, info=None, item=None):
 
+        meta = request.meta
         cam_id = str(item.get("id"))
 
         # If there is no azimuth, it is replaced by unknown
         azimuth = str(item.get("azimuth") or "unknown")
-        filename = f"{cam_id}.jpg"
+        scraped_at = str(meta.get("scraped_at") or "unknown")
+        filename = f"{cam_id}_{scraped_at}.jpg"
 
         return os.path.join(cam_id, azimuth, filename)
